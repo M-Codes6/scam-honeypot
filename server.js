@@ -44,12 +44,12 @@ function agentReply() {
 }
 
 app.post("/api/message", (req, res) => {
-  const { message } = req.body;
+
+  let { message } = req.body;
 
   if (!message) {
-    return res.status(400).json({
-        error: "Message is required"
-    })
+    message = "";
+   
   }
 
   const isScam = detectScam(message);
