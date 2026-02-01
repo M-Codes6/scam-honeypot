@@ -8,6 +8,7 @@ app.use(express.json());
 
 app.use((req, res, next) => {
     const apikey = req.headers["x-api-key"];
+    const API_KEY = process.env.API_KEY || "my-secret-key-123";
 
     if (!apikey || apikey !== process.env.API_KEY) {
         return res.status(401).json({
