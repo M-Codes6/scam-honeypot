@@ -1,9 +1,22 @@
 const express = require("express");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+    const apikey = req.headers["x-api-key"];
+
+    if (!apikey || apikey !== process.env.API_KEY) {
+        return res.status(401).json({
+            error: "Unauthorized: Invalid API KEY"
+        });
+    }
+
+    next();
+});
 
 function detectScam(message) {
 
@@ -51,10 +64,10 @@ app.post("/api/message", (req, res) => {
     },
     extracted_intelligence: {
       bank_accounts: [],
-      upi_ids: upiIds,
-      phishing_links: links
+      upi_ids: extractUPI(message),
+      phishing_links: extractLinks(message)
     },
-    agent_reply: isScam ? agentReply() : "Okay"
+    agent_reply: isScam ? "I am not very sure, can you please share details again?" : "Okay"
   });
 });
 
