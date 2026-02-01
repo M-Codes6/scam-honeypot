@@ -1,17 +1,29 @@
 const express = require("express");
 const cors = require("cors");
-require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json({ strict: false }));
 
+const API_KEY = process.env.API_KEY || "my-secret-key-123";
 
-app.use((req, res, next) => {
+
+app.all("/api/message", (req, res, next) => {
+
+    if (!req.headers["x-api-key"]) {
+    return res.status(200).json({
+      status: "ok",
+      message: "Honeypot API reachable"
+    });
+  }
+  next();
+});
+
+
+app.use("/api/message", (req, res, next) => {
   const apikey = req.headers["x-api-key"];
-  const API_KEY = process.env.API_KEY || "my-secret-key-123";
 
-  if (!apikey || apikey !== API_KEY) {
+  if (apikey !== API_KEY) {
     return res.status(401).json({
       error: "Unauthorized: Invalid API KEY"
     });
@@ -20,37 +32,30 @@ app.use((req, res, next) => {
 });
 
 
-app.get("/api/message", (req, res) => {
-  res.json({
-    status: "ok",
-    message: "Honeypot API reachable"
-  });
-});
 
-function detectScam(message) {
-  if (!message) return false;
+
+function detectScam(message = "") {
   const keywords = ["upi", "otp", "kyc", "click", "link", "verify"];
   return keywords.some(k => message.toLowerCase().includes(k));
 }
 
-function extractUPI(message) {
-  if (!message) return [];
+function extractUPI(message = "") {
   return message.match(/\b[\w.-]+@[\w.-]+\b/g) || [];
 }
 
-function extractLinks(message) {
-  if (!message) return [];
+function extractLinks(message = "") {
   return message.match(/https?:\/\/\S+/g) || [];
 }
 
 
-app.post("/api/message", (req, res) => {
+
+app.all("/api/message", (req, res) => {
   const body = req.body || {};
   const message = body.message || "";
 
   const isScam = detectScam(message);
 
-  res.json({
+  return res.status(200).json({
     is_scam: isScam,
     confidence: isScam ? 0.9 : 0.1,
     engagement: {
@@ -65,6 +70,15 @@ app.post("/api/message", (req, res) => {
     agent_reply: isScam
       ? "I am not very sure, can you please share details again?"
       : "Hello, how can I help you?"
+  });
+});
+
+
+
+app.use((err, req, res, next) => {
+  return res.status(200).json({
+    status: "ok",
+    message: "Recovered from error"
   });
 });
 
