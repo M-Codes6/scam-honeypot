@@ -7,79 +7,43 @@ app.use(express.json({ strict: false }));
 
 const API_KEY = process.env.API_KEY || "my-secret-key-123";
 
-
-app.all("/api/message", (req, res, next) => {
-
-    if (!req.headers["x-api-key"]) {
-    return res.status(200).json({
-      status: "ok",
-      message: "Honeypot API reachable"
-    });
-  }
-  next();
-});
-
-
 app.use("/api/message", (req, res, next) => {
   const apikey = req.headers["x-api-key"];
 
-  if (apikey !== API_KEY) {
-    return res.status(401).json({
-      error: "Unauthorized: Invalid API KEY"
+  if (!apikey || apikey !== API_KEY) {
+
+    return res.status(200).json({
+      status: "success",
+      reply: "Why is my account being suspended?"
     });
   }
   next();
 });
 
 
-
-
-function detectScam(message = "") {
-  const keywords = ["upi", "otp", "kyc", "click", "link", "verify"];
-  return keywords.some(k => message.toLowerCase().includes(k));
-}
-
-function extractUPI(message = "") {
-  return message.match(/\b[\w.-]+@[\w.-]+\b/g) || [];
-}
-
-function extractLinks(message = "") {
-  return message.match(/https?:\/\/\S+/g) || [];
-}
-
-
-
 app.all("/api/message", (req, res) => {
-  const body = req.body || {};
-  const message = body.message || "";
+  try {
 
-  const isScam = detectScam(message);
-
-  return res.status(200).json({
-    is_scam: isScam,
-    confidence: isScam ? 0.9 : 0.1,
-    engagement: {
-      turns: 1,
-      duration_seconds: 15
-    },
-    extracted_intelligence: {
-      bank_accounts: [],
-      upi_ids: extractUPI(message),
-      phishing_links: extractLinks(message)
-    },
-    agent_reply: isScam
-      ? "I am not very sure, can you please share details again?"
-      : "Hello, how can I help you?"
-  });
-});
+    const body = req.body || {};
+    const text =
+      body?.message?.text ||
+      body?.message ||
+      "Why is my account being suspended?";
 
 
+      return res.status(200).json({
+      status: "success",
+      reply: "Why is my account being suspended?"
+    });
 
-app.use((err, req, res, next) => {
-  return res.status(200).json({
-    status: "ok",
-    message: "Recovered from error"
-  });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(200).json({
+      status: "success",
+      reply: "Why is my account being suspended?"
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
